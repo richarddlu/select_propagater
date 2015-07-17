@@ -58,11 +58,20 @@ int main() {
 
 	SelectPropagater sp(img, selects);
 	sp.debug = true;
+	// sp.basisSampleMethod = Uniform;
+	// sp.equSampleMethod = Uniform;
+	sp.basisSampleMethod = NoSample;
+	sp.equSampleMethod = NoSample;
 
 	Mat sMap;
 	sp.apply(sMap);
 
 	imshow("similarity map", sMap);
+
+	cout<<"MSE: "<<sp.selectsMSE<<endl;
+
+	imshow("basis", sp.basisShow);
+	imshow("equ", sp.equShow);
 
 	waitKey(0);
 

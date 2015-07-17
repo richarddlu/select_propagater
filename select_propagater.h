@@ -12,7 +12,7 @@ using namespace cv;
 
 enum ColorSpace {BGR, YCrCb, Lab};
 
-enum SampleMethod {Uniform, Importance};
+enum SampleMethod {Uniform, Importance, NoSample};
 
 class SelectPropagater {
 
@@ -28,19 +28,16 @@ private:	// private variables
 	vector<Vec3b> selectedColors;
 	vector<double> selectedStrenths;
 	vector<Point> selectedPositions;
-	int numSelects;
 
 	// basis samples
 	vector<Vec3b> basisColors;
 	vector<double> basisStrenths;
 	vector<Point> basisPositions;
-	int numBasis;
 
 	// equation samples
 	vector<Vec3b> equColors;
 	vector<double> equStrenths;
 	vector<Point> equPositions;
-	int numEquations;
 
 	// least squares
 	Mat A, b;
@@ -55,6 +52,12 @@ private:	// private methods
 	void sampleBasis();
 
 	void sampleEquation();
+
+	void basisUniformSampling();
+
+	void equUniformSampling();
+
+	void prepareSampleShow();
 
 	void solve();
 
@@ -74,11 +77,28 @@ public:	// public variables
 
 	ColorSpace colorSpace;
 
+	// sample method
+	SampleMethod basisSampleMethod;
+	SampleMethod equSampleMethod;
+
+	// number of samples
+	int numBasisSamples;
+	int numEquSamples;
+
 	double sigma;
 
 	Mat sMap;
 
 	double selectsMSE;
+
+	// actual numbers
+	int numSelects;
+	int numBasis;
+	int numEquations;
+
+	// sample illustration
+	Mat basisShow;
+	Mat equShow;
 
 public:	// public methods
 
