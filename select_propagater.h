@@ -26,12 +26,6 @@ private:	// private variables
 
 	Mat strenMap;
 
-	vector<Point> selectedPositions;
-	
-	vector<bool> basisSelects;
-	vector<size_t> basisSelectIndices;	// efficiency consideration
-	vector<bool> equSelects;
-
 	// least squares
 	Mat A, b;
 	Mat a;	// RBF coefficients
@@ -93,6 +87,12 @@ public:	// public variables
 	// sample illustration
 	Mat basisShow;
 	Mat equShow;
+
+	vector<Point> selectedPositions;
+	
+	vector<bool> basisSelects;
+	vector<size_t> basisSelectIndices;	// efficiency consideration
+	vector<bool> equSelects;
 
 	// clustering
 	size_t K;
