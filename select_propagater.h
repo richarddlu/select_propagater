@@ -29,6 +29,7 @@ private:	// private variables
 	vector<Point> selectedPositions;
 	
 	vector<bool> basisSelects;
+	vector<size_t> basisSelectIndices;	// efficiency consideration
 	vector<bool> equSelects;
 
 	// least squares

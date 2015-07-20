@@ -10,6 +10,8 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 
 	// default number of samples, -1 means let system decide them
 	numSelects = 0;
+	numBasis = 0;
+	numEquations = 0;
 	numBasisSamples = 54;
 	numEquSamples = numBasisSamples;
 
@@ -235,6 +237,11 @@ void SelectPropagater::nnlsCall()
 }
 
 void SelectPropagater::calculateSimilarityMap() {
+	// efficiency consideration
+	for(size_t i = 0; i < numSelects; i++)
+		if(basisSelects[i])
+			basisSelectIndices.push_back(i);
+
 	sMap = Mat::zeros(size, CV_64F);
 	for(int h = 0; h < size.height; h++) {
 		for(int w = 0; w < size.width; w++) {
@@ -246,15 +253,12 @@ void SelectPropagater::calculateSimilarityMap() {
 
 double SelectPropagater::interpolate(const Vec3b& f) {
 	double result = 0;
-	int count = 0;
-	for(int i = 0; i < numSelects; i++) {
-		if(basisSelects[i]) {
-			Vec3b fi = img.at<Vec3b>(selectedPositions[i]);
-			double r = norm(f, fi, NORM_L2);
-			double rf = a.at<double>(count,0) * exp(-sigma * r * r);
-			result += rf;
-			count++;
-		}
+	for(int i = 0; i < numBasis; i++) {
+		size_t index = basisSelectIndices[i];
+		Vec3b fi = img.at<Vec3b>(selectedPositions[index]);
+		double r = norm(f, fi, NORM_L2);
+		double rf = a.at<double>(i,0) * exp(-sigma * r * r);
+		result += rf;
 	}
 	return result;
 }
