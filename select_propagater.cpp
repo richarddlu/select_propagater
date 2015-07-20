@@ -10,8 +10,8 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 	equSampleMethod = NoSample;
 
 	// default number of samples, -1 means let system decide them
-	numBasisSamples = 54;
-	numEquSamples = 108;
+	numBasisSamples = 2000;
+	numEquSamples = 6000;
 
 	sigma = 0.003;
 }
@@ -26,7 +26,7 @@ void SelectPropagater::apply(Mat& sMap) {
 	// if no pixel selected
 	if(numSelects == 0)
 		return;
-
+	
 	// sample basis and equations
 	sampleBasis();
 	sampleEquation();
@@ -86,9 +86,10 @@ void SelectPropagater::sampleBasis() {
 		basisUniformSampling();
 	else {	// no sampling
 		basisColors = selectedColors;
-		basisStrenths = selectedStrenths;
-		if(debug)
+		if(debug) {
+			basisStrenths = selectedStrenths;
 			basisPositions = selectedPositions;
+		}
 		numBasis = basisColors.size();
 	}
 }
@@ -117,22 +118,26 @@ void SelectPropagater::sampleEquation() {
 void SelectPropagater::basisUniformSampling() {
 	RNG rng(getTickCount());
 	vector<Vec3b> selectedColorsTemp = selectedColors;
-	vector<double> selectedStrenthsTemp = selectedStrenths;
+	vector<double> selectedStrenthsTemp;
 	vector<Point> selectedPositionsTemp;
-	if(debug)
+	if(debug) {
+		selectedStrenthsTemp = selectedStrenths;
 		selectedPositionsTemp = selectedPositions;
+	}
 	for(int i = 0; i < numBasis; i++) {
 		int rn = rng.uniform(0, numSelects-i);
 		basisColors.push_back(selectedColorsTemp[rn]);
-		basisStrenths.push_back(selectedStrenthsTemp[rn]);
-		if(debug)
+		if(debug) {
+			basisStrenths.push_back(selectedStrenthsTemp[rn]);
 			basisPositions.push_back(selectedPositionsTemp[rn]);
+		}
 
 		// erase selected element
 		selectedColorsTemp.erase(selectedColorsTemp.begin()+rn);
-		selectedStrenthsTemp.erase(selectedStrenthsTemp.begin()+rn);
-		if(debug)
+		if(debug) {
+			selectedStrenthsTemp.erase(selectedStrenthsTemp.begin()+rn);
 			selectedPositionsTemp.erase(selectedPositionsTemp.begin()+rn);
+		}
 	}
 }
 

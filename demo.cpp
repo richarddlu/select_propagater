@@ -56,6 +56,14 @@ int main() {
 
 	waitKey(0);
 
+	// export mask
+	// FileStorage fs("selects.yml", FileStorage::WRITE);
+	// fs<<"selects"<<selects;
+
+	// import mask
+	// FileStorage fs("selects.yml", FileStorage::READ);
+	// fs["selects"]>>selects;
+
 	SelectPropagater sp(img, selects);
 	sp.debug = true;
 	// sp.basisSampleMethod = Uniform;
@@ -68,6 +76,9 @@ int main() {
 
 	imshow("similarity map", sMap);
 
+	cout<<"Number of Selects: "<<sp.numSelects<<endl;
+	cout<<"Number of Basis: "<<sp.numBasis<<endl;
+	cout<<"Number of Equations: "<<sp.numEquations<<endl;
 	cout<<"MSE: "<<sp.selectsMSE<<endl;
 
 	imshow("basis", sp.basisShow);
