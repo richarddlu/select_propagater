@@ -19,6 +19,9 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 }
 
 void SelectPropagater::apply(Mat& sMap) {
+	// Initialize sMap whatever happened
+	sMap = Mat::zeros(size, CV_64F);
+
 	// convert color space
 	convertColorSpace();
 
@@ -41,12 +44,11 @@ void SelectPropagater::apply(Mat& sMap) {
 	solve();
 
 	// calculate similarity map
-	calculateSimilarityMap();
-	sMap = this->sMap.clone();
+	calculateSimilarityMap(sMap);
 
 	// calculate selects MSE
 	if(debug)
-		calculateSelectsMSE();
+		calculateSelectsMSE(sMap);
 }
 
 void SelectPropagater::convertColorSpace() {
@@ -236,13 +238,12 @@ void SelectPropagater::nnlsCall()
 	a = *(new Mat(n, 1, CV_64F, arra));
 }
 
-void SelectPropagater::calculateSimilarityMap() {
+void SelectPropagater::calculateSimilarityMap(Mat& sMap) {
 	// efficiency consideration
 	for(size_t i = 0; i < numSelects; i++)
 		if(basisSelects[i])
 			basisSelectIndices.push_back(i);
 
-	sMap = Mat::zeros(size, CV_64F);
 	for(int h = 0; h < size.height; h++) {
 		for(int w = 0; w < size.width; w++) {
 			double temp = interpolate(img.at<Vec3b>(h,w));
@@ -263,7 +264,7 @@ double SelectPropagater::interpolate(const Vec3b& f) {
 	return result;
 }
 
-void SelectPropagater::calculateSelectsMSE()
+void SelectPropagater::calculateSelectsMSE(const Mat& sMap)
 {
 	selectsMSE = 0;
 	for(int i = 0; i < numSelects; i++) {

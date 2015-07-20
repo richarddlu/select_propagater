@@ -58,11 +58,11 @@ private:	// private methods
 
 	void nnlsCall();
 
-	void calculateSimilarityMap();
+	void calculateSimilarityMap(Mat& sMap);
 
 	double interpolate(const Vec3b& f);
 
-	void calculateSelectsMSE();
+	void calculateSelectsMSE(const Mat& sMap);
 
 	// void matReshape(const Mat& src, Mat& dst, int numRows);
 
@@ -82,8 +82,6 @@ public:	// public variables
 	int numEquSamples;
 
 	double sigma;
-
-	Mat sMap;
 
 	double selectsMSE;
 
