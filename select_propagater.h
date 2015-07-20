@@ -24,20 +24,12 @@ private:	// private variables
 
 	Mat selects;
 
-	// extracted select info
-	vector<Vec3b> selectedColors;
-	vector<double> selectedStrenths;
-	// vector<Point> selectedPositions;
+	Mat strenMap;
 
-	// basis samples
-	vector<Vec3b> basisColors;
-	vector<double> basisStrenths;
-	vector<Point> basisPositions;
-
-	// equation samples
-	vector<Vec3b> equColors;
-	vector<double> equStrenths;
-	vector<Point> equPositions;
+	vector<Point> selectedPositions;
+	
+	vector<bool> basisSelects;
+	vector<bool> equSelects;
 
 	// least squares
 	Mat A, b;
@@ -93,22 +85,12 @@ public:	// public variables
 
 	// actual numbers
 	int numSelects;
-	// int numBasis;
-	// int numEquations;
+	int numBasis;
+	int numEquations;
 
 	// sample illustration
 	Mat basisShow;
 	Mat equShow;
-
-	Mat strenMap;
-
-	vector<Point> selectedPositions;
-
-	int numBasis;
-	vector<bool> basisSelects;
-
-	int numEquations;
-	vector<bool> equSelects;
 
 public:	// public methods
 
