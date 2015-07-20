@@ -61,15 +61,15 @@ int main() {
 	// fs<<"selects"<<selects;
 
 	// import mask
-	// FileStorage fs("selects.yml", FileStorage::READ);
-	// fs["selects"]>>selects;
+	FileStorage fs("selects.yml", FileStorage::READ);
+	fs["selects"]>>selects;
 
 	SelectPropagater sp(img, selects);
 	sp.debug = true;
 	sp.basisSampleMethod = Uniform;
-	// sp.equSampleMethod = Uniform;
+	sp.equSampleMethod = Uniform;
 	// sp.basisSampleMethod = NoSample;
-	sp.equSampleMethod = NoSample;
+	// sp.equSampleMethod = NoSample;
 
 	Mat sMap;
 	sp.apply(sMap);

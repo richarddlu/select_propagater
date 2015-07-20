@@ -12,7 +12,7 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 	// default number of samples, -1 means let system decide them
 	numSelects = 0;
 	numBasisSamples = 54;
-	numEquSamples = 200;
+	numEquSamples = numBasisSamples;
 
 	sigma = 0.003;
 }
@@ -125,15 +125,8 @@ void SelectPropagater::equUniformSampling() {
 	RNG rng(getTickCount());
 	equSelects.resize(numSelects, false);
 
-	for(int i = 0; i < numEquations; i++) {
-		int rn = rng.uniform(0, numSelects-i);
-		for(int j = rn; j < numSelects; j++) {
-			if(!equSelects[j]) {
-				equSelects[j] = true;
-				break;
-			}
-		}
-	}
+	for(size_t i = 0; i < numSelects; i++)
+		equSelects[i] = basisSelects[i];
 }
 
 void SelectPropagater::prepareSampleShow() {
