@@ -6,8 +6,7 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 	this->img = img.clone();
 	this->selects = selects.clone();
 	colorSpace = BGR;
-	basisSampleMethod = NoSample;
-	equSampleMethod = NoSample;
+	sampleMethod = NoSample;
 
 	// default number of samples, -1 means let system decide them
 	numSelects = 0;
@@ -28,7 +27,7 @@ void SelectPropagater::apply(Mat& sMap) {
 	if(numSelects == 0)
 		return;
 	
-	// // sample basis and equations
+	// sample basis and equations
 	sampleBasis();
 	sampleEquation();
 
@@ -72,7 +71,7 @@ void SelectPropagater::extractSelect() {
 
 void SelectPropagater::sampleBasis() {
 	// sample number validate
-	if(basisSampleMethod != NoSample) {
+	if(sampleMethod != NoSample) {
 		numBasis = numBasisSamples;
 		if(numBasis <= 0)
 			numBasis = 1;
@@ -80,7 +79,7 @@ void SelectPropagater::sampleBasis() {
 			numBasis = numSelects;
 	}
 
-	if(basisSampleMethod == Uniform)	// uniform sampling
+	if(sampleMethod == Uniform)	// uniform sampling
 		basisUniformSampling();
 	else {	// no sampling
 		numBasis = numSelects;
@@ -90,7 +89,7 @@ void SelectPropagater::sampleBasis() {
 
 void SelectPropagater::sampleEquation() {
 	// sample number validate
-	if(equSampleMethod != NoSample) {
+	if(sampleMethod != NoSample) {
 		numEquations = numEquSamples;
 		if(numEquations <= 0)
 			numEquations = 1;
@@ -98,7 +97,7 @@ void SelectPropagater::sampleEquation() {
 			numEquations = numSelects;
 	}
 
-	if(equSampleMethod == Uniform)	// uniform sampling
+	if(sampleMethod == Uniform)	// uniform sampling
 		equUniformSampling();
 	else {	// no sampling
 		numEquations = numSelects;
@@ -269,3 +268,43 @@ void SelectPropagater::calculateSelectsMSE()
 	}
 	selectsMSE /= numSelects;
 }
+
+// void SelectPropagater::matReshape(const Mat& src, Mat& dst, int numRows) {
+// 	int numCols = src.size().height*src.size().width/numRows;
+// 	dst.create(numRows, numCols, src.type());
+// 	int row_count = 0;
+// 	int col_count = 0;;
+// 	for(int h = 0; h < src.size().height; h++) {
+// 		for(int w = 0; w < src.size().width; w++) {
+// 			if(src.channels() == 1)
+// 				dst.at<float>(row_count,col_count) = src.at<float>(h,w);
+// 			else
+// 				dst.at<Vec3f>(row_count,col_count) = src.at<Vec3f>(h,w);
+// 			col_count++;
+// 			if(col_count >= numCols) {
+// 				col_count = 0;
+// 				row_count++;
+// 			}
+// 		}
+// 	}
+// }
+
+// void SelectPropagater::imgKMeans() {
+// 	Mat imgF;
+// 	img.convertTo(imgF, CV_32FC3);
+
+// 	Mat points;
+// 	if(imgF.isContinuous())
+// 		points = imgF.reshape(0, imgF.size().height*imgF.size().width);
+// 	else
+// 		matReshape(imgF, points, imgF.size().height*imgF.size().width);
+
+// 	Mat centers;
+// 	Mat labelMapTemp;
+// 	kmeans(points, K, labelMapTemp, TermCriteria(TermCriteria::EPS+TermCriteria::COUNT,1000,0.1), 3, KMEANS_PP_CENTERS, centers);
+
+// 	if(labelMapTemp.isContinuous())
+// 		labelMap = labelMapTemp.reshape(0, img.size().height);
+// 	else
+// 		matReshape(labelMapTemp, labelMap, img.size().height);
+// }

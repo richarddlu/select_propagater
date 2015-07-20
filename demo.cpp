@@ -66,10 +66,9 @@ int main() {
 
 	SelectPropagater sp(img, selects);
 	sp.debug = true;
-	sp.basisSampleMethod = Uniform;
-	sp.equSampleMethod = Uniform;
-	// sp.basisSampleMethod = NoSample;
-	// sp.equSampleMethod = NoSample;
+	// sp.sampleMethod = Importance;
+	sp.sampleMethod = Uniform;
+	// sp.sampleMethod = NoSample;
 
 	Mat sMap;
 	sp.apply(sMap);

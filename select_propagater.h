@@ -63,6 +63,10 @@ private:	// private methods
 
 	void calculateSelectsMSE();
 
+	// void matReshape(const Mat& src, Mat& dst, int numRows);
+
+	// void imgKMeans();
+
 public:	// public variables
 
 	bool debug;
@@ -70,8 +74,7 @@ public:	// public variables
 	ColorSpace colorSpace;
 
 	// sample method
-	SampleMethod basisSampleMethod;
-	SampleMethod equSampleMethod;
+	SampleMethod sampleMethod;
 
 	// number of samples
 	int numBasisSamples;
@@ -91,6 +94,10 @@ public:	// public variables
 	// sample illustration
 	Mat basisShow;
 	Mat equShow;
+
+	// clustering
+	size_t K;
+	Mat labelMap;
 
 public:	// public methods
 
