@@ -27,7 +27,7 @@ private:	// private variables
 	// extracted select info
 	vector<Vec3b> selectedColors;
 	vector<double> selectedStrenths;
-	vector<Point> selectedPositions;
+	// vector<Point> selectedPositions;
 
 	// basis samples
 	vector<Vec3b> basisColors;
@@ -93,12 +93,22 @@ public:	// public variables
 
 	// actual numbers
 	int numSelects;
-	int numBasis;
-	int numEquations;
+	// int numBasis;
+	// int numEquations;
 
 	// sample illustration
 	Mat basisShow;
 	Mat equShow;
+
+	Mat strenMap;
+
+	vector<Point> selectedPositions;
+
+	int numBasis;
+	vector<bool> basisSelects;
+
+	int numEquations;
+	vector<bool> equSelects;
 
 public:	// public methods
 

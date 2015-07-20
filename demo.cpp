@@ -61,8 +61,8 @@ int main() {
 	// fs<<"selects"<<selects;
 
 	// import mask
-	// FileStorage fs("selects.yml", FileStorage::READ);
-	// fs["selects"]>>selects;
+	FileStorage fs("selects.yml", FileStorage::READ);
+	fs["selects"]>>selects;
 
 	SelectPropagater sp(img, selects);
 	sp.debug = true;
@@ -81,8 +81,8 @@ int main() {
 	cout<<"Number of Equations: "<<sp.numEquations<<endl;
 	cout<<"MSE: "<<sp.selectsMSE<<endl;
 
-	imshow("basis", sp.basisShow);
-	imshow("equ", sp.equShow);
+	// imshow("basis", sp.basisShow);
+	// imshow("equ", sp.equShow);
 
 	waitKey(0);
 

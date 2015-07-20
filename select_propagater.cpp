@@ -10,6 +10,7 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 	equSampleMethod = NoSample;
 
 	// default number of samples, -1 means let system decide them
+	numSelects = 0;
 	numBasisSamples = 2000;
 	numEquSamples = 6000;
 
@@ -23,17 +24,17 @@ void SelectPropagater::apply(Mat& sMap) {
 	// extract select info
 	extractSelect();
 
-	// if no pixel selected
+	// // if no pixel selected
 	if(numSelects == 0)
 		return;
 	
-	// sample basis and equations
+	// // sample basis and equations
 	sampleBasis();
 	sampleEquation();
 
-	// show samples
-	if(debug)
-		prepareSampleShow();
+	// // show samples
+	// if(debug)
+	// 	prepareSampleShow();
 
 	// solve RBF coefficients
 	solve();
@@ -55,64 +56,70 @@ void SelectPropagater::convertColorSpace() {
 }
 
 void SelectPropagater::extractSelect() {
+	strenMap = Mat::zeros(size, CV_64F);
 	for(int h = 0; h < size.height; h++) {
 		for(int w = 0; w < size.width; w++) {
 			if(selects.at<char>(h,w) != 0) {
-				selectedColors.push_back(img.at<Vec3b>(h,w));
+				selectedPositions.push_back(Point(w,h));
 				if(selects.at<char>(h,w) > 0) {	// inclusive
-					selectedStrenths.push_back(1.0);
-				} else {	// exclusive
-					selectedStrenths.push_back(0.0);
+					strenMap.at<double>(h,w) = 1.0;
 				}
-				if(debug)
-					selectedPositions.push_back(Point(w,h));
+				numSelects++;
 			}
 		}
 	}
-	numSelects = selectedColors.size();
 }
+
+// void SelectPropagater::sampleBasis() {
+// 	// sample number validate
+// 	if(basisSampleMethod != NoSample) {
+// 		numBasis = numBasisSamples;
+// 		if(numBasis <= 0)
+// 			numBasis = 1;
+// 		if(numBasis > numSelects)
+// 			numBasis = numSelects;
+// 	}
+
+// 	if(basisSampleMethod == Uniform)	// uniform sampling
+// 		basisUniformSampling();
+// 	else {	// no sampling
+// 		basisColors = selectedColors;
+// 		if(debug) {
+// 			basisStrenths = selectedStrenths;
+// 			basisPositions = selectedPositions;
+// 		}
+// 		numBasis = basisColors.size();
+// 	}
+// }
 
 void SelectPropagater::sampleBasis() {
-	// sample number validate
-	if(basisSampleMethod != NoSample) {
-		numBasis = numBasisSamples;
-		if(numBasis <= 0)
-			numBasis = 1;
-		if(numBasis > numSelects)
-			numBasis = numSelects;
-	}
-
-	if(basisSampleMethod == Uniform)	// uniform sampling
-		basisUniformSampling();
-	else {	// no sampling
-		basisColors = selectedColors;
-		if(debug) {
-			basisStrenths = selectedStrenths;
-			basisPositions = selectedPositions;
-		}
-		numBasis = basisColors.size();
-	}
+	numBasis = numSelects;
+	basisSelects.resize(numBasis, true);
 }
 
-void SelectPropagater::sampleEquation() {
-	// sample number validate
-	if(equSampleMethod != NoSample) {
-		numEquations = numEquSamples;
-		if(numEquations <= 0)
-			numEquations = 1;
-		if(numEquations > numSelects)
-			numEquations = numSelects;
-	}
+// void SelectPropagater::sampleEquation() {
+// 	// sample number validate
+// 	if(equSampleMethod != NoSample) {
+// 		numEquations = numEquSamples;
+// 		if(numEquations <= 0)
+// 			numEquations = 1;
+// 		if(numEquations > numSelects)
+// 			numEquations = numSelects;
+// 	}
 
-	if(equSampleMethod == Uniform)	// uniform sampling
-		equUniformSampling();
-	else {	// no sampling
-		equColors = selectedColors;
-		equStrenths = selectedStrenths;
-		if(debug)
-			equPositions = selectedPositions;
-		numEquations = equColors.size();
-	}
+// 	if(equSampleMethod == Uniform)	// uniform sampling
+// 		equUniformSampling();
+// 	else {	// no sampling
+// 		equColors = selectedColors;
+// 		equStrenths = selectedStrenths;
+// 		if(debug)
+// 			equPositions = selectedPositions;
+// 		numEquations = equColors.size();
+// 	}
+// }
+void SelectPropagater::sampleEquation() {
+	numEquations = numSelects;
+	equSelects.resize(numEquations, true);
 }
 
 void SelectPropagater::basisUniformSampling() {
@@ -187,23 +194,33 @@ void SelectPropagater::SelectPropagater::solve() {
 
 void SelectPropagater::constructEquations() {
 	// Construct matrix A row by row
-	for(int i = 0; i < numEquations; i++) {
-		Mat row(1, numBasis, CV_64F);
-		Vec3b f = equColors[i];
-		for(int j = 0; j < numBasis; j++) {
-			Vec3b fi = basisColors[j];
-			double r = norm(f, fi, NORM_L2);
-			double rf = exp(-sigma * r * r);
-			row.at<double>(0,j) = rf;
+	for(int i = 0; i < numSelects; i++) {
+		if(equSelects[i]) {
+			Mat row(1, numBasis, CV_64F);
+			Vec3b f = img.at<Vec3b>(selectedPositions[i]);
+			int count = 0;
+			for(int j = 0; j < numSelects; j++) {
+				if(basisSelects[j]) {
+					Vec3b fi = img.at<Vec3b>(selectedPositions[j]);
+					double r = norm(f, fi, NORM_L2);
+					double rf = exp(-sigma * r * r);
+					row.at<double>(0,count) = rf;
+					count++;
+				}
+			}
+			// row *= q[selectedColorLabels[i]];
+			A.push_back(row);
 		}
-		// row *= q[selectedColorLabels[i]];
-		A.push_back(row);
 	}
 	
 	// Construct matrix B
 	b = Mat::zeros(numEquations, 1, CV_64F);
-	for(int i = 0; i < numEquations; i++) {
-		b.at<double>(i,0) = equStrenths[i];
+	int count = 0;
+	for(int i = 0; i < numSelects; i++) {
+		if(equSelects[i]) {
+			b.at<double>(count,0) = strenMap.at<double>(selectedPositions[i]);
+			count++;
+		}
 	}
 }
 
@@ -267,10 +284,15 @@ void SelectPropagater::calculateSimilarityMap() {
 
 double SelectPropagater::interpolate(const Vec3b& f) {
 	double result = 0;
-	for(int i = 0; i < numBasis; i++) {
-		double r = norm(f, basisColors[i], NORM_L2);
-		double rf = a.at<double>(i,0) * exp(-sigma * r * r);
-		result += rf;
+	int count = 0;
+	for(int i = 0; i < numSelects; i++) {
+		if(basisSelects[i]) {
+			Vec3b fi = img.at<Vec3b>(selectedPositions[i]);
+			double r = norm(f, fi, NORM_L2);
+			double rf = a.at<double>(count,0) * exp(-sigma * r * r);
+			result += rf;
+			count++;
+		}
 	}
 	return result;
 }
@@ -280,7 +302,7 @@ void SelectPropagater::calculateSelectsMSE()
 	selectsMSE = 0;
 	for(int i = 0; i < numSelects; i++) {
 		double rbf = sMap.at<double>(selectedPositions[i]);
-		selectsMSE += pow(rbf - selectedStrenths[i], 2);
+		selectsMSE += pow(rbf - strenMap.at<double>(selectedPositions[i]), 2);
 	}
 	selectsMSE /= numSelects;
 }
