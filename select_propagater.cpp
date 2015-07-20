@@ -11,8 +11,8 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 
 	// default number of samples, -1 means let system decide them
 	numSelects = 0;
-	numBasisSamples = 2000;
-	numEquSamples = 6000;
+	numBasisSamples = 54;
+	numEquSamples = 200;
 
 	sigma = 0.003;
 }
@@ -32,9 +32,9 @@ void SelectPropagater::apply(Mat& sMap) {
 	sampleBasis();
 	sampleEquation();
 
-	// // show samples
-	// if(debug)
-	// 	prepareSampleShow();
+	// show samples
+	if(debug)
+		prepareSampleShow();
 
 	// solve RBF coefficients
 	solve();
@@ -70,120 +70,90 @@ void SelectPropagater::extractSelect() {
 	}
 }
 
-// void SelectPropagater::sampleBasis() {
-// 	// sample number validate
-// 	if(basisSampleMethod != NoSample) {
-// 		numBasis = numBasisSamples;
-// 		if(numBasis <= 0)
-// 			numBasis = 1;
-// 		if(numBasis > numSelects)
-// 			numBasis = numSelects;
-// 	}
-
-// 	if(basisSampleMethod == Uniform)	// uniform sampling
-// 		basisUniformSampling();
-// 	else {	// no sampling
-// 		basisColors = selectedColors;
-// 		if(debug) {
-// 			basisStrenths = selectedStrenths;
-// 			basisPositions = selectedPositions;
-// 		}
-// 		numBasis = basisColors.size();
-// 	}
-// }
-
 void SelectPropagater::sampleBasis() {
-	numBasis = numSelects;
-	basisSelects.resize(numBasis, true);
+	// sample number validate
+	if(basisSampleMethod != NoSample) {
+		numBasis = numBasisSamples;
+		if(numBasis <= 0)
+			numBasis = 1;
+		if(numBasis > numSelects)
+			numBasis = numSelects;
+	}
+
+	if(basisSampleMethod == Uniform)	// uniform sampling
+		basisUniformSampling();
+	else {	// no sampling
+		numBasis = numSelects;
+		basisSelects.resize(numBasis, true);
+	}
 }
 
-// void SelectPropagater::sampleEquation() {
-// 	// sample number validate
-// 	if(equSampleMethod != NoSample) {
-// 		numEquations = numEquSamples;
-// 		if(numEquations <= 0)
-// 			numEquations = 1;
-// 		if(numEquations > numSelects)
-// 			numEquations = numSelects;
-// 	}
-
-// 	if(equSampleMethod == Uniform)	// uniform sampling
-// 		equUniformSampling();
-// 	else {	// no sampling
-// 		equColors = selectedColors;
-// 		equStrenths = selectedStrenths;
-// 		if(debug)
-// 			equPositions = selectedPositions;
-// 		numEquations = equColors.size();
-// 	}
-// }
 void SelectPropagater::sampleEquation() {
-	numEquations = numSelects;
-	equSelects.resize(numEquations, true);
+	// sample number validate
+	if(equSampleMethod != NoSample) {
+		numEquations = numEquSamples;
+		if(numEquations <= 0)
+			numEquations = 1;
+		if(numEquations > numSelects)
+			numEquations = numSelects;
+	}
+
+	if(equSampleMethod == Uniform)	// uniform sampling
+		equUniformSampling();
+	else {	// no sampling
+		numEquations = numSelects;
+		equSelects.resize(numEquations, true);
+	}
 }
 
 void SelectPropagater::basisUniformSampling() {
 	RNG rng(getTickCount());
-	vector<Vec3b> selectedColorsTemp = selectedColors;
-	vector<double> selectedStrenthsTemp;
-	vector<Point> selectedPositionsTemp;
-	if(debug) {
-		selectedStrenthsTemp = selectedStrenths;
-		selectedPositionsTemp = selectedPositions;
-	}
+	basisSelects.resize(numSelects, false);
+
 	for(int i = 0; i < numBasis; i++) {
 		int rn = rng.uniform(0, numSelects-i);
-		basisColors.push_back(selectedColorsTemp[rn]);
-		if(debug) {
-			basisStrenths.push_back(selectedStrenthsTemp[rn]);
-			basisPositions.push_back(selectedPositionsTemp[rn]);
-		}
-
-		// erase selected element
-		selectedColorsTemp.erase(selectedColorsTemp.begin()+rn);
-		if(debug) {
-			selectedStrenthsTemp.erase(selectedStrenthsTemp.begin()+rn);
-			selectedPositionsTemp.erase(selectedPositionsTemp.begin()+rn);
+		for(int j = rn; j < numSelects; j++) {
+			if(!basisSelects[j]) {
+				basisSelects[j] = true;
+				break;
+			}
 		}
 	}
 }
 
 void SelectPropagater::equUniformSampling() {
 	RNG rng(getTickCount());
-	vector<Vec3b> selectedColorsTemp = selectedColors;
-	vector<double> selectedStrenthsTemp = selectedStrenths;
-	vector<Point> selectedPositionsTemp;
-	if(debug)
-		selectedPositionsTemp = selectedPositions;
+	equSelects.resize(numSelects, false);
+
 	for(int i = 0; i < numEquations; i++) {
 		int rn = rng.uniform(0, numSelects-i);
-		equColors.push_back(selectedColorsTemp[rn]);
-		equStrenths.push_back(selectedStrenthsTemp[rn]);
-		if(debug)
-			equPositions.push_back(selectedPositionsTemp[rn]);
-
-		// erase selected element
-		selectedColorsTemp.erase(selectedColorsTemp.begin()+rn);
-		selectedStrenthsTemp.erase(selectedStrenthsTemp.begin()+rn);
-		if(debug)
-			selectedPositionsTemp.erase(selectedPositionsTemp.begin()+rn);
+		for(int j = rn; j < numSelects; j++) {
+			if(!equSelects[j]) {
+				equSelects[j] = true;
+				break;
+			}
+		}
 	}
 }
 
 void SelectPropagater::prepareSampleShow() {
 	basisShow = img.clone();
 	equShow = img.clone();
-	for(int i = 0; i < numBasis; i++) {
-		if(basisStrenths[i] < 0.5)
-			circle(basisShow, basisPositions[i], 2.0, Scalar(0,0,255), 1, 8);
-		else
-			circle(basisShow, basisPositions[i], 2.0, Scalar(0,255,0), 1, 8);
+	for(int i = 0; i < numSelects; i++) {
+		if(basisSelects[i]) {
+			if(strenMap.at<double>(selectedPositions[i]) < 0.5)
+				circle(basisShow, selectedPositions[i], 1.0, Scalar(0,0,255), 1, 8);
+			else
+				circle(basisShow, selectedPositions[i], 1.0, Scalar(0,255,0), 1, 8);
+		}
 	}
-	for(int i = 0; i < numEquations; i++) {
-		if(equStrenths[i] < 0.5)
-			circle(equShow, equPositions[i], 2.0, Scalar(0,0,255), 1, 8);
-		else
-			circle(equShow, equPositions[i], 2.0, Scalar(0,255,0), 1, 8);
+	for(int i = 0; i < numSelects; i++) {
+		if(equSelects[i]) {
+			if(strenMap.at<double>(selectedPositions[i]) < 0.5)
+				circle(equShow, selectedPositions[i], 1.0, Scalar(0,0,255), 1, 8);
+			else
+				circle(equShow, selectedPositions[i], 1.0, Scalar(0,255,0), 1, 8);
+		}
 	}
 }
 
