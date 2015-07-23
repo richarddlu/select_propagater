@@ -69,7 +69,8 @@ public:	// public variables
 	ColorSpace colorSpace;
 
 	// sample method
-	SampleMethod sampleMethod;
+	SampleMethod basisSampleMethod;
+	SampleMethod equSampleMethod;
 
 	// number of samples
 	int numBasisSamples;

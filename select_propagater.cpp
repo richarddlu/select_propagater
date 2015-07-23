@@ -6,14 +6,15 @@ SelectPropagater::SelectPropagater(const Mat& img, const Mat& selects) {
 	this->img = img.clone();
 	this->selects = selects.clone();
 	colorSpace = BGR;
-	sampleMethod = NoSample;
+	basisSampleMethod = NoSample;
+	equSampleMethod = NoSample;
 
 	// default number of samples, -1 means let system decide them
 	numSelects = 0;
 	numBasis = 0;
 	numEquations = 0;
 	numBasisSamples = 54;
-	numEquSamples = numBasisSamples;
+	numEquSamples = 100;
 
 	sigma = 0.003;
 }
@@ -75,7 +76,7 @@ void SelectPropagater::extractSelect() {
 
 void SelectPropagater::sampleBasis() {
 	// sample number validate
-	if(sampleMethod != NoSample) {
+	if(basisSampleMethod != NoSample) {
 		numBasis = numBasisSamples;
 		if(numBasis <= 0)
 			numBasis = 1;
@@ -83,7 +84,7 @@ void SelectPropagater::sampleBasis() {
 			numBasis = numSelects;
 	}
 
-	if(sampleMethod == Uniform)	// uniform sampling
+	if(basisSampleMethod == Uniform)	// uniform sampling
 		basisUniformSampling();
 	else {	// no sampling
 		numBasis = numSelects;
@@ -93,7 +94,7 @@ void SelectPropagater::sampleBasis() {
 
 void SelectPropagater::sampleEquation() {
 	// sample number validate
-	if(sampleMethod != NoSample) {
+	if(equSampleMethod != NoSample) {
 		numEquations = numEquSamples;
 		if(numEquations <= 0)
 			numEquations = 1;
@@ -101,7 +102,7 @@ void SelectPropagater::sampleEquation() {
 			numEquations = numSelects;
 	}
 
-	if(sampleMethod == Uniform)	// uniform sampling
+	if(equSampleMethod == Uniform)	// uniform sampling
 		equUniformSampling();
 	else {	// no sampling
 		numEquations = numSelects;
@@ -128,8 +129,17 @@ void SelectPropagater::equUniformSampling() {
 	RNG rng(getTickCount());
 	equSelects.resize(numSelects, false);
 
-	for(size_t i = 0; i < numSelects; i++)
-		equSelects[i] = basisSelects[i];
+	// for(size_t i = 0; i < numSelects; i++)
+	// 	equSelects[i] = basisSelects[i];
+	for(int i = 0; i < numEquations; i++) {
+		int rn = rng.uniform(0, numSelects-i);
+		for(int j = rn; j < numSelects; j++) {
+			if(!equSelects[j]) {
+				equSelects[j] = true;
+				break;
+			}
+		}
+	}
 }
 
 void SelectPropagater::prepareSampleShow() {
