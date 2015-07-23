@@ -198,14 +198,17 @@ void SelectPropagater::nnlsCall()
 	int mda = m;
 
 	// Construct array for A
+	// arrA is column major, while Mat in OpenCV is row major. So a transpose is performed
+	Mat ATrans;
+	transpose(A, ATrans);
 	double* arrA;
 	if(A.isContinuous()) {
-		arrA = (double*)A.data;
+		arrA = (double*)ATrans.data;
 	}
 	else {
 		arrA = (double*)malloc(m*n*8);
-		for(int h = 0; h < m; h++)
-			memcpy(&(arrA[h*n]), A.ptr<double>(h), n*8);
+		for(int w = 0; w < n; w++)
+			memcpy(&(arrA[w*m]), ATrans.ptr<double>(w), m*8);
 	}
 
 	// Contruct array for b
