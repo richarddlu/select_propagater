@@ -37,6 +37,9 @@ void SelectPropagater::apply(Mat& sMap) {
 	sampleBasis();
 	sampleEquation();
 
+	if(numBasis <= 0 || numEquations <= 0)
+		return;
+
 	// show samples
 	if(debug)
 		prepareSampleShow();
@@ -111,35 +114,21 @@ void SelectPropagater::sampleEquation() {
 }
 
 void SelectPropagater::basisUniformSampling() {
-	RNG rng(getTickCount());
 	basisSelects.resize(numSelects, false);
 
-	for(int i = 0; i < numBasis; i++) {
-		int rn = rng.uniform(0, numSelects-i);
-		for(int j = rn; j < numSelects; j++) {
-			if(!basisSelects[j]) {
-				basisSelects[j] = true;
-				break;
-			}
-		}
-	}
+	vector<int> indices;
+	rSamplingInt(indices, 0, numSelects, numBasis);
+	for(size_t i = 0; i < numBasis; i++)
+		basisSelects[indices[i]] = true;
 }
 
 void SelectPropagater::equUniformSampling() {
-	RNG rng(getTickCount());
 	equSelects.resize(numSelects, false);
 
-	// for(size_t i = 0; i < numSelects; i++)
-	// 	equSelects[i] = basisSelects[i];
-	for(int i = 0; i < numEquations; i++) {
-		int rn = rng.uniform(0, numSelects-i);
-		for(int j = rn; j < numSelects; j++) {
-			if(!equSelects[j]) {
-				equSelects[j] = true;
-				break;
-			}
-		}
-	}
+	vector<int> indices;
+	rSamplingInt(indices, 0, numSelects, numEquations);
+	for(size_t i = 0; i < numEquations; i++)
+		equSelects[indices[i]] = true;
 }
 
 void SelectPropagater::prepareSampleShow() {
@@ -285,6 +274,31 @@ void SelectPropagater::calculateSelectsMSE(const Mat& sMap)
 		selectsMSE += pow(rbf - strenMap.at<double>(selectedPositions[i]), 2);
 	}
 	selectsMSE /= numSelects;
+}
+
+void SelectPropagater::rSamplingInt(vector<int>& samples, int a, int b, size_t S) {
+	// parameter validation
+	if(!(S > 0))
+		return;
+	if(b - a < S)
+		return;
+
+	// clear dst
+	samples.clear();
+
+	for(size_t i = 0; i < S; i++) {
+		samples.push_back(a + i);
+	}
+
+	size_t n = b - a;
+	size_t num_seen = S;
+	srand(time(NULL));
+	while(num_seen < n) {
+		num_seen++;
+		int rn = rand() % num_seen;
+		if(rn < S)
+			samples[rn] = a + num_seen - 1;
+	}
 }
 
 // void SelectPropagater::matReshape(const Mat& src, Mat& dst, int numRows) {

@@ -58,6 +58,8 @@ private:	// private methods
 
 	void calculateSelectsMSE(const Mat& sMap);
 
+	void rSamplingInt(vector<int>& samples, int a, int b, size_t S);
+
 	// void matReshape(const Mat& src, Mat& dst, int numRows);
 
 	// void imgKMeans();
