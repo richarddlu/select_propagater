@@ -30,6 +30,11 @@ private:	// private variables
 	Mat A, b;
 	Mat a;	// RBF coefficients
 
+	// importance sampling
+	vector<double> PDF;	// size K
+	vector<double> CDF;	// size numSelects
+	vector<double> weights;
+
 private:	// private methods
 
 	void convertColorSpace();
@@ -43,6 +48,20 @@ private:	// private methods
 	void basisUniformSampling();
 
 	void equUniformSampling();
+
+	void basisImportanceSampling();
+
+	void equImportanceSampling();
+
+	void prepareForImportanceSampling();
+
+	void imgKMeans();
+
+	void calculateWeights();
+
+	void calculatePDF();
+
+	void calculateCDF();
 
 	void prepareSampleShow();
 
@@ -59,10 +78,6 @@ private:	// private methods
 	void calculateSelectsMSE(const Mat& sMap);
 
 	void rSamplingInt(vector<int>& samples, int a, int b, size_t S);
-
-	// void matReshape(const Mat& src, Mat& dst, int numRows);
-
-	// void imgKMeans();
 
 public:	// public variables
 
@@ -97,9 +112,9 @@ public:	// public variables
 	vector<size_t> basisSelectIndices;	// efficiency consideration
 	vector<bool> equSelects;
 
-	// clustering
+	// importance sampling
 	size_t K;
-	Mat labelMap;
+	Mat labelMap;	// single column matrix, CV_32SC1
 
 public:	// public methods
 

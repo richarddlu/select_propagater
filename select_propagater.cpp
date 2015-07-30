@@ -34,10 +34,14 @@ void SelectPropagater::apply(Mat& sMap) {
 		return;
 	
 	// sample basis and equations
+	if(basisSampleMethod == Importance || equSampleMethod == Importance)
+		prepareForImportanceSampling();
 	sampleBasis();
 	sampleEquation();
 
 	if(numBasis <= 0 || numEquations <= 0)
+		return;
+	if(numEquations < numBasis)	// this case is not likely to happen
 		return;
 
 	// show samples
@@ -89,6 +93,8 @@ void SelectPropagater::sampleBasis() {
 
 	if(basisSampleMethod == Uniform)	// uniform sampling
 		basisUniformSampling();
+	else if(basisSampleMethod == Importance)
+		basisImportanceSampling();
 	else {	// no sampling
 		numBasis = numSelects;
 		basisSelects.resize(numBasis, true);
@@ -107,6 +113,8 @@ void SelectPropagater::sampleEquation() {
 
 	if(equSampleMethod == Uniform)	// uniform sampling
 		equUniformSampling();
+	else if(equSampleMethod == Importance)
+		equImportanceSampling();
 	else {	// no sampling
 		numEquations = numSelects;
 		equSelects.resize(numEquations, true);
@@ -129,6 +137,96 @@ void SelectPropagater::equUniformSampling() {
 	rSamplingInt(indices, 0, numSelects, numEquations);
 	for(size_t i = 0; i < numEquations; i++)
 		equSelects[indices[i]] = true;
+}
+
+void SelectPropagater::basisImportanceSampling() {
+	RNG rng(getTickCount());
+	basisSelects.resize(numSelects, false);
+
+	size_t actualNumBasis = 0;
+	for(size_t i = 0; i < numBasis; i++) {
+		double rn = rng.uniform(0.0, 1.0);
+		for(size_t j = 0; j < numSelects; j++) {
+			if(rn <= CDF[j]) {
+				if(!basisSelects[j]) {
+					basisSelects[j] = true;
+					actualNumBasis++;
+				}
+				break;
+			}
+		}
+	}
+	numBasis = actualNumBasis;
+}
+
+void SelectPropagater::equImportanceSampling() {
+	RNG rng(getTickCount());
+	equSelects.resize(numSelects, false);
+
+	size_t actualNumEquations = 0;
+	for(size_t i = 0; i < numEquations; i++) {
+		double rn = rng.uniform(0.0, 1.0);
+		for(size_t j = 0; j < numSelects; j++) {
+			if(rn <= CDF[j]) {
+				if(!equSelects[j]) {
+					equSelects[j] = true;
+					actualNumEquations++;
+				}
+				break;
+			}
+		}
+	}
+	numEquations = actualNumEquations;
+}
+
+void SelectPropagater::prepareForImportanceSampling() {
+	imgKMeans();
+	calculateWeights();
+	calculatePDF();
+	calculateCDF();
+}
+
+void SelectPropagater::imgKMeans() {
+	Mat points(numSelects, 1, CV_32FC3);
+	for(size_t i = 0; i < numSelects; i++)
+		points.at<Vec3f>(i,0) = img.at<Vec3b>(selectedPositions[i]);
+	kmeans(points, K, labelMap, TermCriteria(TermCriteria::EPS+TermCriteria::COUNT,1000,0.1), 1, KMEANS_PP_CENTERS);
+}
+
+void SelectPropagater::calculateWeights() {
+	weights.resize(K);
+
+	vector<size_t> counts(K, 0);
+	for(size_t i = 0; i < numSelects; i++) {
+		counts[labelMap.at<int>(i,0)]++;
+	}
+	for(size_t i = 0; i < K; i++) {
+		weights[i] = (double)(counts[i]) / numSelects;
+	}
+}
+
+void SelectPropagater::calculatePDF() {
+	PDF.resize(K);
+	for(size_t i = 0; i < K; i++) {
+		if(weights[i] == 0)
+			PDF[i] = 0;
+		else
+			PDF[i] = 1 / weights[i];
+	}
+}
+
+void SelectPropagater::calculateCDF() {
+	CDF.resize(numSelects);
+	for(size_t i = 0; i < numSelects; i++)
+		if(i == 0)
+			CDF[i] = PDF[labelMap.at<int>(i,0)];
+		else
+			CDF[i] = CDF[i-1] + PDF[labelMap.at<int>(i,0)];
+
+	// normalize CDF
+	double ratio = 1.0 / CDF[numSelects-1];	// assert CDF[numSelects-1] is not equal to zero
+	for(size_t i = 0; i < numSelects; i++)
+		CDF[i] *= ratio;
 }
 
 void SelectPropagater::prepareSampleShow() {
@@ -300,43 +398,3 @@ void SelectPropagater::rSamplingInt(vector<int>& samples, int a, int b, size_t S
 			samples[rn] = a + num_seen - 1;
 	}
 }
-
-// void SelectPropagater::matReshape(const Mat& src, Mat& dst, int numRows) {
-// 	int numCols = src.size().height*src.size().width/numRows;
-// 	dst.create(numRows, numCols, src.type());
-// 	int row_count = 0;
-// 	int col_count = 0;;
-// 	for(int h = 0; h < src.size().height; h++) {
-// 		for(int w = 0; w < src.size().width; w++) {
-// 			if(src.channels() == 1)
-// 				dst.at<float>(row_count,col_count) = src.at<float>(h,w);
-// 			else
-// 				dst.at<Vec3f>(row_count,col_count) = src.at<Vec3f>(h,w);
-// 			col_count++;
-// 			if(col_count >= numCols) {
-// 				col_count = 0;
-// 				row_count++;
-// 			}
-// 		}
-// 	}
-// }
-
-// void SelectPropagater::imgKMeans() {
-// 	Mat imgF;
-// 	img.convertTo(imgF, CV_32FC3);
-
-// 	Mat points;
-// 	if(imgF.isContinuous())
-// 		points = imgF.reshape(0, imgF.size().height*imgF.size().width);
-// 	else
-// 		matReshape(imgF, points, imgF.size().height*imgF.size().width);
-
-// 	Mat centers;
-// 	Mat labelMapTemp;
-// 	kmeans(points, K, labelMapTemp, TermCriteria(TermCriteria::EPS+TermCriteria::COUNT,1000,0.1), 3, KMEANS_PP_CENTERS, centers);
-
-// 	if(labelMapTemp.isContinuous())
-// 		labelMap = labelMapTemp.reshape(0, img.size().height);
-// 	else
-// 		matReshape(labelMapTemp, labelMap, img.size().height);
-// }
