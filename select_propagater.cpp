@@ -250,7 +250,7 @@ void SelectPropagater::prepareSampleShow() {
 	}
 }
 
-void SelectPropagater::SelectPropagater::solve() {
+void SelectPropagater::solve() {
 	constructEquations();
 	nnlsCall();
 }
